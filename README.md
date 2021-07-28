@@ -1,6 +1,6 @@
 # SDFI-ui
 
-This UI aims at testing the Solana_DFI_Program git repo.
+This UI aims at testing the Solana_DFI_Program git repo. To test it, run solana on local cluster and deploy the SDFI contract.
 
 # Addresses creation
 
