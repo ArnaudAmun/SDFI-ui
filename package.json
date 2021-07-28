@@ -1,5 +1,5 @@
 {
-  "name": "escrow-ui",
+  "name": "SDFI-ui",
   "testnetDefaultChannel": "v1.5.0",
   "version": "0.1.0",
   "private": true,

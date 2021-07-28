@@ -1,20 +1,20 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 
-const Alice = () => import("./Alice.vue")
-const Bob = () => import("./Bob.vue")
+const Init = () => import("./init.vue")
+const Update = () => import("./update.vue")
 
 export default createRouter({
     history: createWebHashHistory(),
     routes: [
         {
-            name: "Alice",
+            name: "Init",
             path: "/",
-            component: Alice
+            component: Init
         },
         {
-            name: "Bob",
-            path: "/bob",
-            component: Bob
+            name: "Update",
+            path: "/update",
+            component: Update
         }
     ]
 })
