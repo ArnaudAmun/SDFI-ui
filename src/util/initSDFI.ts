@@ -1,5 +1,5 @@
-import {TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { Account, Connection, PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY, Transaction, TransactionInstruction } from "@solana/web3.js";
+import * as splToken from "@solana/spl-token";
+import { Keypair, Connection, PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY, Transaction, TransactionInstruction } from "@solana/web3.js";
 import BN from "bn.js";
 import { rawListeners } from "process";
 import { SDFI_ACCOUNT_DATA_LAYOUT, SDFILayout } from "./layout sdfi";
@@ -8,7 +8,7 @@ const connection = new Connection("http://localhost:8899", 'singleGossip');
 
 export const initSDFI = async (
 
-    amunPrivateKeyByteArray: string,
+    initializerPrivateKeyByteArray: string,
     sdfiMintPubKeyString: string,
     sdfiProgramIdString: string,
     tokenAPubKeyString: string,
@@ -17,10 +17,11 @@ export const initSDFI = async (
     tokenBWeight: number,
 ) => {
 
-    // amun main account
-    const amunPrivateKey = amunPrivateKeyByteArray.split(',').map(s=>parseInt(s));
-    const amunAccount = new Account(amunPrivateKey);
-    console.log("amunAccount: {}", amunAccount.publicKey.toString());
+    // Initializer main account
+    const initializerPrivateKey = initializerPrivateKeyByteArray.split(',').map(s=>parseInt(s));
+    const initializerPrivateKeyUint8 = new Uint8Array(initializerPrivateKey);
+    const initializerAccount = Keypair.fromSecretKey(initializerPrivateKeyUint8);
+    console.log("initializerAccount: {}", initializerAccount.publicKey.toString());
     
     // Accounts Public Keys
     const sdfiMintPubKey = new PublicKey(sdfiMintPubKeyString);
@@ -30,7 +31,7 @@ export const initSDFI = async (
     console.log("sdfiMintPubKey: {}", sdfiMintPubKey.toString())
     
     // Create SDFI state accoount
-    const sdfiStateAccount = new Account();
+    const sdfiStateAccount = new Keypair();
     console.log("sdfiStateAccount: {}", sdfiStateAccount.publicKey.toString())
 
     // Program ID
@@ -42,7 +43,7 @@ export const initSDFI = async (
     const createSDFIAccountIx = SystemProgram.createAccount({
         space: SDFI_ACCOUNT_DATA_LAYOUT.span,
         lamports: await connection.getMinimumBalanceForRentExemption(SDFI_ACCOUNT_DATA_LAYOUT.span, 'singleGossip'),
-        fromPubkey: amunAccount.publicKey,
+        fromPubkey: initializerAccount.publicKey,
         newAccountPubkey: sdfiStateAccount.publicKey,
         programId: sdfiProgramId
     });
@@ -52,13 +53,13 @@ export const initSDFI = async (
     const initSDFIIx = new TransactionInstruction({
         programId: sdfiProgramId,
         keys: [
-            { pubkey: amunAccount.publicKey, isSigner: true, isWritable: false },
+            { pubkey: initializerAccount.publicKey, isSigner: true, isWritable: false },
             { pubkey: sdfiMintPubKey, isSigner: false, isWritable: true },
             { pubkey: sdfiStateAccount.publicKey, isSigner: false, isWritable: true },
             { pubkey: tokenAPubkey, isSigner: false, isWritable: true },
             { pubkey: tokenBPubkey, isSigner: false, isWritable: true },
             { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false},
-            { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+            { pubkey: splToken.TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
         ],
         data: Buffer.from(Uint8Array.of(0, 
             ...new BN(tokenAweight).toArray("le", 8),
@@ -72,7 +73,7 @@ export const initSDFI = async (
     
     // Send the transaction
     console.log("Send transaction")
-    await connection.sendTransaction(tx, [amunAccount, sdfiStateAccount], {skipPreflight: false, preflightCommitment: 'singleGossip'});
+    await connection.sendTransaction(tx, [initializerAccount, sdfiStateAccount], {skipPreflight: false, preflightCommitment: 'singleGossip'});
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // Request data from the SDFI state program

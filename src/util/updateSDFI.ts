@@ -1,5 +1,4 @@
-import {TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { Account, Connection, PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY, Transaction, TransactionInstruction } from "@solana/web3.js";
+import { Keypair, Connection, PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY, Transaction, TransactionInstruction } from "@solana/web3.js";
 import BN from "bn.js";
 import { rawListeners } from "process";
 import { SDFI_ACCOUNT_DATA_LAYOUT, SDFILayout } from "./layout sdfi";
@@ -8,7 +7,7 @@ const connection = new Connection("http://localhost:8899", 'singleGossip');
 
 export const updateSDFI = async (
 
-    amunPrivateKeyByteArray: string,
+    initializerPrivateKeyByteArray: string,
     sdfiProgramIdString: string,
     sdfiAccountPubkeyString: string,
     tokenAPubKeyString: string,
@@ -18,9 +17,10 @@ export const updateSDFI = async (
 ) => {
 
     // amun main account
-    const amunPrivateKey = amunPrivateKeyByteArray.split(',').map(s=>parseInt(s));
-    const amunAccount = new Account(amunPrivateKey);
-    console.log("amunAccount: {}", amunAccount.publicKey.toString());
+    const initializerPrivateKey = initializerPrivateKeyByteArray.split(',').map(s=>parseInt(s));
+    const initializerPrivateKeyUint8 = new Uint8Array(initializerPrivateKey);
+    const initializerAccount = Keypair.fromSecretKey(initializerPrivateKeyUint8);
+    console.log("initializerAccount: {}", initializerAccount.publicKey.toString());
     
     // Program ID
     const sdfiProgramId = new PublicKey(sdfiProgramIdString);
@@ -38,7 +38,7 @@ export const updateSDFI = async (
     const updateSDFIIx = new TransactionInstruction({
         programId: sdfiProgramId,
         keys: [
-            { pubkey: amunAccount.publicKey, isSigner: true, isWritable: false },
+            { pubkey: initializerAccount.publicKey, isSigner: true, isWritable: false },
             { pubkey: sdfiAccountPubkey, isSigner: false, isWritable: true },
             { pubkey: tokenAPubkey, isSigner: false, isWritable: true },
             { pubkey: tokenBPubkey, isSigner: false, isWritable: true },
@@ -56,7 +56,7 @@ export const updateSDFI = async (
     
     // Send the transaction
     console.log("Send transaction")
-    await connection.sendTransaction(tx, [amunAccount], {skipPreflight: false, preflightCommitment: 'singleGossip'});
+    await connection.sendTransaction(tx, [initializerAccount], {skipPreflight: false, preflightCommitment: 'singleGossip'});
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // Request data from the SDFI state program
