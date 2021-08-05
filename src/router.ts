@@ -2,6 +2,7 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 
 const Init = () => import("./init.vue")
 const Update = () => import("./update.vue")
+const Mint = () => import("./mint.vue")
 
 export default createRouter({
     history: createWebHashHistory(),
@@ -15,6 +16,11 @@ export default createRouter({
             name: "Update",
             path: "/update",
             component: Update
+        },
+        {
+            name: "Mint",
+            path: "/mint",
+            component: Mint
         }
     ]
 })
