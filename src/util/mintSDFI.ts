@@ -1,5 +1,5 @@
 import * as splToken from "@solana/spl-token";
-import { Keypair, Connection, PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY, Transaction, TransactionInstruction } from "@solana/web3.js";
+import { Keypair, Connection, PublicKey, Transaction, TransactionInstruction } from "@solana/web3.js";
 import BN from "bn.js";
 import { SDFI_ACCOUNT_DATA_LAYOUT, SDFILayout } from "./layout sdfi";
 
@@ -9,7 +9,9 @@ export const mintSDFI = async (
 
     userPrivateKeyByteArray: string,
     sdfiProgramIdString: string,
+    sdfiMintPubkeyString: string,
     sdfiAccountPubkeyString: string,
+    mintOwnerPubkeyString: string,
     amount: number,
 ) => {
 
@@ -34,10 +36,17 @@ export const mintSDFI = async (
     // Get Amun Pubkey
     let amunPubkey = new PublicKey(decodedSdfiLayout.initializerPubkey);
 
+    // Sdfi mint Pubkey
+    let sdfiMintPubkey = new PublicKey(sdfiMintPubkeyString);
+
     // Underlyings mint state accounts
     let tokenAPubkey = new PublicKey(decodedSdfiLayout.tokenAPubkey);
     let tokenBPubkey = new PublicKey(decodedSdfiLayout.tokenBPubkey);
     
+    // Underlyings owner Pubkey
+    let mintOwnerPubkey = new PublicKey(mintOwnerPubkeyString);
+
+    console.log("Token")
     let mint_a = new splToken.Token(
         connection, 
         tokenAPubkey, 
@@ -52,35 +61,50 @@ export const mintSDFI = async (
     );
     let mint_sdfi = new splToken.Token(
         connection, 
-        sdfiAccountPubkey, 
+        sdfiMintPubkey, 
         splToken.TOKEN_PROGRAM_ID,
         userAccount
     );
 
+    // Mint decimals
+    let mint_decimals_a = (await mint_a.getMintInfo()).decimals;
+    let mint_decimals_b = (await mint_b.getMintInfo()).decimals;
+    let mint_decimals_sdfi = (await mint_sdfi.getMintInfo()).decimals;
+
     // Associated addresses for each underlyings and SDFI
     let userAssociatedAccountA = await mint_a.getOrCreateAssociatedAccountInfo(userAccount.publicKey);
+    console.log("user Associated Account A: ", userAssociatedAccountA.address.toString());
+
     let userAssociatedAccountB = await mint_b.getOrCreateAssociatedAccountInfo(userAccount.publicKey);
+    console.log("user Associated Account B: ", userAssociatedAccountB.address.toString());
+
     let userAssociatedAccountSdfi = await mint_sdfi.getOrCreateAssociatedAccountInfo(userAccount.publicKey);
+    console.log("user Associated Account SDFI: ", userAssociatedAccountSdfi.address.toString());
     
-    let amunAssociatedAccountA = await mint_b.getOrCreateAssociatedAccountInfo(amunPubkey);
+    let amunAssociatedAccountA = await mint_a.getOrCreateAssociatedAccountInfo(amunPubkey);
+    console.log("amun Associated Account A: ", amunAssociatedAccountA.address.toString());
+
     let amunAssociatedAccountB = await mint_b.getOrCreateAssociatedAccountInfo(amunPubkey);
-    let amunAssociatedAccountSdfi = await mint_sdfi.getOrCreateAssociatedAccountInfo(amunPubkey);
-    
+    console.log("amun Associated Account B: d", amunAssociatedAccountB.address.toString());
+
+    // Get PDA Pubkey
+    const PDA = await PublicKey.findProgramAddress([Buffer.from("escrow")], sdfiProgramId);
+
     // Instruction
     console.log("Instruction for SDFI minting")
     const mintSDFIIx = new TransactionInstruction({   
         programId: sdfiProgramId,
         keys: [
             { pubkey: userAccount.publicKey, isSigner: true, isWritable: false },
+            { pubkey: sdfiMintPubkey, isSigner: false, isWritable: true },
             { pubkey: sdfiAccountPubkey, isSigner: false, isWritable: true },
-            { pubkey: amunAssociatedAccountA.address, isSigner: false, isWritable: false },
-            { pubkey: amunAssociatedAccountB.address, isSigner: false, isWritable: false },
-            { pubkey: amunAssociatedAccountSdfi.address, isSigner: false, isWritable: false },
-            { pubkey: userAssociatedAccountA.address, isSigner: false, isWritable: false },
-            { pubkey: userAssociatedAccountB.address, isSigner: false, isWritable: false },
-            { pubkey: userAssociatedAccountSdfi.address, isSigner: false, isWritable: false },
-            { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false},
+            { pubkey: amunAssociatedAccountA.address, isSigner: false, isWritable: true },
+            { pubkey: amunAssociatedAccountB.address, isSigner: false, isWritable: true },
+            { pubkey: userAssociatedAccountA.address, isSigner: false, isWritable: true },
+            { pubkey: userAssociatedAccountB.address, isSigner: false, isWritable: true },
+            { pubkey: userAssociatedAccountSdfi.address, isSigner: false, isWritable: true },
             { pubkey: splToken.TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+            { pubkey: PDA[0], isSigner: false, isWritable: false },
         ],
         data: Buffer.from(Uint8Array.of(2, 
             ...new BN(amount).toArray("le", 8)))
