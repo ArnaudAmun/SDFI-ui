@@ -19,10 +19,6 @@
           <input class="display-block" type="text" v-model="formState.sdfiAccountPubkey">
       </div>
       <div class="mb-1">
-          <label for="">Mint underlying owner</label>
-          <input class="display-block" type="text" v-model="formState.mintOwnerPubkey">
-      </div>
-      <div class="mb-1">
           <label for="">Desired SDFI amount</label>
           <input class="display-block" type="number" v-model="formState.amount" step="0.01" min="0">
       </div>
@@ -46,7 +42,6 @@ export default defineComponent({
       programId: "D17TpV1tDB2Qi5hvfiivZad1hwTRCmf1kGXj2RukuhaS",
       sdfiMintPubkey: "3hdqisPzTovceJHauD9sL57QCUwrXNhpXpumxXw2uLDi",
       sdfiAccountPubkey: "AKVS3VwfQfyBJJzPxVakQuzVf2SRoEqKwkwTxmTwjkG8",
-      mintOwnerPubkey: "8omF9Wy4Qvu1DcZJLoJL7dWqbc5R4P3xuDixvsQ9SHty",
       amount: 1
     })
 
@@ -55,7 +50,6 @@ export default defineComponent({
       formState.programId = "";
       formState.sdfiMintPubkey = "";
       formState.sdfiAccountPubkey = "";
-      formState.mintOwnerPubkey = "";
       formState.amount = 0;
     }
 
@@ -66,7 +60,6 @@ export default defineComponent({
           formState.programId,
           formState.sdfiMintPubkey,
           formState.sdfiAccountPubkey,
-          formState.mintOwnerPubkey,
           formState.amount,
         );
       } catch(err) {

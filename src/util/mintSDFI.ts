@@ -11,7 +11,6 @@ export const mintSDFI = async (
     sdfiProgramIdString: string,
     sdfiMintPubkeyString: string,
     sdfiAccountPubkeyString: string,
-    mintOwnerPubkeyString: string,
     amount: number,
 ) => {
 
@@ -42,9 +41,6 @@ export const mintSDFI = async (
     // Underlyings mint state accounts
     let tokenAPubkey = new PublicKey(decodedSdfiLayout.tokenAPubkey);
     let tokenBPubkey = new PublicKey(decodedSdfiLayout.tokenBPubkey);
-    
-    // Underlyings owner Pubkey
-    let mintOwnerPubkey = new PublicKey(mintOwnerPubkeyString);
 
     console.log("Token")
     let mint_a = new splToken.Token(
